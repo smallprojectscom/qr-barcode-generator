@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QR & Barcode Studio</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      --bg: #081121;
+      --panel: rgba(255,255,255,0.08);
+      --panel-strong: rgba(255,255,255,0.12);
+      --line: rgba(255,255,255,0.12);
+      --text: #f8fafc;
+      --muted: #cbd5e1;
+      --accent: #7c3aed;
+      --accent-2: #06b6d4;
+      --ok: #10b981;
+      --shadow: 0 20px 60px rgba(0,0,0,0.30);
+      --radius: 24px;
+    }
+    body {
+      margin: 0;
+      font-family: Inter, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(6,182,212,0.18), transparent 30%),
+        radial-gradient(circle at top right, rgba(124,58,237,0.22), transparent 30%),
+        linear-gradient(180deg, #020617 0%, #0f172a 55%, #020617 100%);
+      min-height: 100vh;
+    }
+    .wrap { max-width: 1380px; margin: 0 auto; padding: 22px; }
+    .glass {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      backdrop-filter: blur(16px);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
+    }
+    .hero {
+      padding: 28px;
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 20px;
+      margin-bottom: 18px;
+    }
+    .hero h1 {
+      margin: 0 0 10px;
+      font-size: 48px;
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+    }
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 16px;
+      max-width: 760px;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(99,102,241,0.14);
+      border: 1px solid rgba(129,140,248,0.24);
+      color: #dbeafe;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 14px;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .stat {
+      padding: 16px;
+      border-radius: 20px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .stat .k { color: var(--muted); font-size: 13px; }
+    .stat .v { margin-top: 8px; font-size: 28px; font-weight: 800; }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .toolbar button,
+    .btn {
+      border: 0;
+      border-radius: 16px;
+      padding: 12px 16px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: 0.18s ease;
+    }
+    .btn-primary { background: linear-gradient(135deg, var(--accent), #4f46e5); color: white; }
+    .btn-secondary { background: rgba(255,255,255,0.08); color: white; border: 1px solid rgba(255,255,255,0.08); }
+    .btn-cyan { background: linear-gradient(135deg, var(--accent-2), #2563eb); color: #fff; }
+    .toolbar button:hover, .btn:hover { transform: translateY(-1px); }
+    .status {
+      margin-bottom: 16px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #e2e8f0;
+      font-size: 14px;
+    }
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+    .section-card { padding: 20px; }
+    .section-head {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .section-head h2 { margin: 0; font-size: 24px; }
+    .section-head p { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
+    .tag {
+      padding: 7px 11px;
+      font-size: 11px;
+      font-weight: 800;
+      color: #dcfce7;
+      border-radius: 999px;
+      background: rgba(16,185,129,0.12);
+      border: 1px solid rgba(16,185,129,0.20);
+      white-space: nowrap;
+    }
+    .inputs-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .field { margin-bottom: 12px; }
+    label {
+      display: block;
+      margin-bottom: 7px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+    }
+    input, textarea, select {
+      width: 100%;
+      background: rgba(2,6,23,0.72);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.11);
+      border-radius: 16px;
+      padding: 12px 14px;
+      outline: none;
+      font-size: 14px;
+    }
+    textarea { min-height: 126px; resize: vertical; }
+    input:focus, textarea:focus, select:focus {
+      border-color: rgba(99,102,241,0.6);
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.14);
+    }
+    .action-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .preview-box {
+      min-height: 330px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(2,6,23,0.66);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 22px;
+      padding: 18px;
+      overflow: auto;
+    }
+    #qrPreviewShell {
+      background: #fff;
+      border-radius: 24px;
+      padding: 18px;
+      box-shadow: 0 18px 35px rgba(0,0,0,0.18);
+    }
+    .note {
+      margin-top: 14px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px;
+      padding: 12px 14px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+      word-break: break-word;
+    }
+    .bulk-top {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .bulk-output {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      gap: 14px;
+      width: 100%;
+    }
+    .bulk-code-card {
+      background: #fff;
+      color: #0f172a;
+      border-radius: 18px;
+      padding: 12px;
+      min-height: 220px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 10px;
+      box-shadow: 0 14px 25px rgba(0,0,0,0.10);
+    }
+    .bulk-code-label {
+      font-size: 12px;
+      text-align: center;
+      word-break: break-word;
+      line-height: 1.35;
+    }
+    .footer-strip {
+      margin-top: 18px;
+      padding: 16px 18px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    .mini {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px;
+      padding: 14px;
+    }
+    .mini h3 { margin: 0 0 8px; font-size: 16px; }
+    .mini p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+    @media (max-width: 1180px) {
+      .main-grid { grid-template-columns: 1fr; }
+      .hero { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 720px) {
+      .inputs-2, .bulk-top, .footer-strip, .stats { grid-template-columns: 1fr; }
+      .hero h1 { font-size: 36px; }
+      .wrap { padding: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero glass">
+      <div>
+        <div class="pill">Modern one-page website</div>
+        <h1>QR, Barcode & Bulk Generator in one beautiful page</h1>
+        <p>Create single QR codes, single barcodes, and full bulk output on the same screen with a clean premium UI. Everything is arranged on one page so you can work faster without opening different sections.</p>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="k">QR types</div><div class="v">6+</div></div>
+        <div class="stat"><div class="k">Barcode formats</div><div class="v">4</div></div>
+        <div class="stat"><div class="k">Bulk page</div><div class="v">Live</div></div>
+        <div class="stat"><div class="k">Layout</div><div class="v">Single page</div></div>
+      </div>
+    </div>
+
+    <div id="status" class="status glass">Ready</div>
+
+    <div class="toolbar">
+      <button class="btn btn-primary" id="generateAllBtn">Generate All</button>
+      <button class="btn btn-secondary" id="focusQrBtn">QR Preview</button>
+      <button class="btn btn-secondary" id="focusBarcodeBtn">Barcode Preview</button>
+      <button class="btn btn-secondary" id="focusBulkBtn">Bulk Output</button>
+    </div>
+
+    <div class="main-grid">
+      <section id="qrSection" class="section-card glass">
+        <div class="section-head">
+          <div>
+            <h2>QR Generator</h2>
+            <p>Simple, clean, scan-ready QR creator.</p>
+          </div>
+          <div class="tag">QR ready</div>
+        </div>
+
+        <div class="inputs-2">
+          <div class="field">
+            <label>QR Type</label>
+            <select id="qrType">
+              <option value="url">URL / Link</option>
+              <option value="text">Text</option>
+              <option value="phone">Phone</option>
+              <option value="email">Email</option>
+              <option value="wifi">WiFi</option>
+              <option value="contact">Contact</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Size</label>
+            <input id="qrSize" type="number" min="180" max="420" value="280" />
+          </div>
+          <div class="field">
+            <label>Foreground</label>
+            <input id="qrDark" type="color" value="#111111" />
+          </div>
+          <div class="field">
+            <label>Background</label>
+            <input id="qrLight" type="color" value="#ffffff" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Enter content</label>
+          <textarea id="qrInput">https://example.com</textarea>
+        </div>
+
+        <div class="action-row">
+          <button class="btn btn-primary" id="makeQrBtn">Generate QR</button>
+        </div>
+
+        <div class="preview-box" style="margin-top:16px;">
+          <div id="qrPreviewShell"><div id="qrPreview"></div></div>
+        </div>
+
+        <div class="note" id="qrEncodedText">Encoded value will appear here.</div>
+      </section>
+
+      <section id="barcodeSection" class="section-card glass">
+        <div class="section-head">
+          <div>
+            <h2>Barcode Generator</h2>
+            <p>Product-style barcode preview with validation.</p>
+          </div>
+          <div class="tag">Barcode ready</div>
+        </div>
+
+        <div class="inputs-2">
+          <div class="field">
+            <label>Barcode Type</label>
+            <select id="barcodeType">
+              <option value="CODE128">CODE128</option>
+              <option value="CODE39">CODE39</option>
+              <option value="EAN13">EAN13</option>
+              <option value="UPC">UPC</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Height</label>
+            <input id="barcodeHeight" type="number" min="60" max="180" value="90" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Enter barcode value</label>
+          <input id="barcodeInput" value="123456789012" />
+        </div>
+
+        <div class="action-row">
+          <button class="btn btn-cyan" id="makeBarcodeBtn">Generate Barcode</button>
+        </div>
+
+        <div class="preview-box" style="margin-top:16px; background:#fff;">
+          <svg id="barcodePreview"></svg>
+        </div>
+
+        <div class="note">Use CODE128 or CODE39 for letters and numbers. Use EAN13 for 12 or 13 digits. Use UPC for 11 or 12 digits.</div>
+      </section>
+
+      <section id="bulkSection" class="section-card glass">
+        <div class="section-head">
+          <div>
+            <h2>Bulk Output</h2>
+            <p>Paste many links or values and generate all together.</p>
+          </div>
+          <div class="tag">Bulk page</div>
+        </div>
+
+        <div class="bulk-top">
+          <div class="field">
+            <label>Mode</label>
+            <select id="bulkMode">
+              <option value="qr">Bulk QR</option>
+              <option value="barcode">Bulk Barcode</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Barcode Type</label>
+            <select id="bulkBarcodeType">
+              <option value="CODE128">CODE128</option>
+              <option value="CODE39">CODE39</option>
+              <option value="EAN13">EAN13</option>
+              <option value="UPC">UPC</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Paste one item per line</label>
+          <textarea id="bulkInput">https://site-1.com
+https://site-2.com
+https://site-3.com</textarea>
+        </div>
+
+        <div class="action-row">
+          <button class="btn btn-primary" id="generateBulkBtn">Generate Bulk Page</button>
+        </div>
+
+        <div class="preview-box" style="margin-top:16px; align-items:flex-start; justify-content:flex-start;">
+          <div id="bulkOutput" class="bulk-output"></div>
+        </div>
+      </section>
+    </div>
+
+    <div class="footer-strip glass">
+      <div class="mini">
+        <h3>Single page workflow</h3>
+        <p>No separate pages needed. QR, barcode, and bulk tools are all visible together.</p>
+      </div>
+      <div class="mini">
+        <h3>Cleaner business UI</h3>
+        <p>Premium glassmorphism style with better spacing, stronger hierarchy, and modern cards.</p>
+      </div>
+      <div class="mini">
+        <h3>Bulk view improved</h3>
+        <p>Multiple QR or barcode items render directly in the bulk output grid on the same page.</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const statusEl = document.getElementById('status');
+    const qrPreview = document.getElementById('qrPreview');
+    const barcodePreview = document.getElementById('barcodePreview');
+    const bulkOutput = document.getElementById('bulkOutput');
+    const qrEncodedText = document.getElementById('qrEncodedText');
+
+    function setStatus(message) {
+      statusEl.textContent = message;
+    }
+
+    function scrollToSection(id) {
+      document.getElementById(id).scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function formatQrValue(type, value) {
+      const v = value.trim();
+      if (!v) return '';
+      if (type === 'phone') return 'tel:' + v;
+      if (type === 'email') return 'mailto:' + v;
+      if (type === 'wifi') {
+        const parts = v.split(',').map(s => s.trim());
+        return `WIFI:T:${parts[2] || 'WPA'};S:${parts[0] || 'MyWiFi'};P:${parts[1] || 'password123'};;`;
+      }
+      if (type === 'contact') {
+        const parts = v.split(',').map(s => s.trim());
+        return `BEGIN:VCARD\nVERSION:3.0\nFN:${parts[0] || 'Your Name'}\nTEL:${parts[1] || '+91XXXXXXXXXX'}\nEMAIL:${parts[2] || 'hello@example.com'}\nEND:VCARD`;
+      }
+      return v;
+    }
+
+    function clearChildren(node) {
+      while (node.firstChild) node.removeChild(node.firstChild);
+    }
+
+    function makeQr(target, rawValue, size, dark, light) {
+      clearChildren(target);
+      new QRCode(target, {
+        text: rawValue,
+        width: size,
+        height: size,
+        colorDark: dark,
+        colorLight: light,
+        correctLevel: QRCode.CorrectLevel.H
+      });
+    }
+
+    function generateQr() {
+      try {
+        const type = document.getElementById('qrType').value;
+        const input = document.getElementById('qrInput').value;
+        const size = Number(document.getElementById('qrSize').value) || 280;
+        const dark = document.getElementById('qrDark').value;
+        const light = document.getElementById('qrLight').value;
+        const value = formatQrValue(type, input);
+        if (!value) throw new Error('Enter QR content');
+        makeQr(qrPreview, value, size, dark, light);
+        qrEncodedText.textContent = value;
+        setStatus('QR generated successfully.');
+      } catch (e) {
+        setStatus('QR failed: ' + e.message);
+      }
+    }
+
+    function normalizeBarcodeValue(type, value) {
+      const v = value.trim();
+      if (type === 'EAN13') return v.replace(/\D/g, '').slice(0, 13);
+      if (type === 'UPC') return v.replace(/\D/g, '').slice(0, 12);
+      return v;
+    }
+
+    function generateBarcode() {
+      try {
+        const type = document.getElementById('barcodeType').value;
+        const rawValue = document.getElementById('barcodeInput').value;
+        const value = normalizeBarcodeValue(type, rawValue);
+        const height = Number(document.getElementById('barcodeHeight').value) || 90;
+        if (!value) throw new Error('Enter barcode value');
+        if (type === 'EAN13' && value.length !== 12 && value.length !== 13) throw new Error('EAN13 needs 12 or 13 digits');
+        if (type === 'UPC' && value.length !== 11 && value.length !== 12) throw new Error('UPC needs 11 or 12 digits');
+        barcodePreview.innerHTML = '';
+        JsBarcode(barcodePreview, value, {
+          format: type,
+          lineColor: '#111111',
+          width: 2,
+          height,
+          displayValue: true,
+          background: '#ffffff',
+          margin: 10
+        });
+        setStatus('Barcode generated successfully.');
+      } catch (e) {
+        barcodePreview.innerHTML = '';
+        setStatus('Barcode failed: ' + e.message);
+      }
+    }
+
+    function getBulkItems() {
+      return document.getElementById('bulkInput').value
+        .split('\n')
+        .map(v => v.trim())
+        .filter(Boolean);
+    }
+
+    function createBarcodeSvgData(item, format) {
+      const normalized = normalizeBarcodeValue(format, item);
+      if (!normalized) throw new Error('Empty barcode value');
+      if (format === 'EAN13' && normalized.length !== 12 && normalized.length !== 13) {
+        throw new Error('EAN13 needs 12 or 13 digits');
+      }
+      if (format === 'UPC' && normalized.length !== 11 && normalized.length !== 12) {
+        throw new Error('UPC needs 11 or 12 digits');
+      }
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      JsBarcode(svg, normalized, {
+        format,
+        lineColor: '#111111',
+        width: 2,
+        height: 70,
+        displayValue: true,
+        background: '#ffffff',
+        margin: 10
+      });
+      return svg;
+    }
+
+    function generateBulkPage() {
+      try {
+        const mode = document.getElementById('bulkMode').value;
+        const barcodeType = document.getElementById('bulkBarcodeType').value;
+        const items = getBulkItems();
+        if (!items.length) throw new Error('Add at least one line');
+        clearChildren(bulkOutput);
+
+        let successCount = 0;
+        let failCount = 0;
+
+        for (const item of items) {
+          const card = document.createElement('div');
+          card.className = 'bulk-code-card';
+          const label = document.createElement('div');
+          label.className = 'bulk-code-label';
+          label.textContent = item;
+
+          try {
+            if (mode === 'qr') {
+              const box = document.createElement('div');
+              makeQr(box, item, 130, '#111111', '#ffffff');
+              card.appendChild(box);
+            } else {
+              const svg = createBarcodeSvgData(item, barcodeType);
+              svg.setAttribute('width', '140');
+              svg.setAttribute('height', '90');
+              card.appendChild(svg);
+            }
+            successCount += 1;
+          } catch (err) {
+            const errBox = document.createElement('div');
+            errBox.className = 'bulk-code-label';
+            errBox.style.color = '#dc2626';
+            errBox.textContent = err.message;
+            card.appendChild(errBox);
+            failCount += 1;
+          }
+
+          card.appendChild(label);
+          bulkOutput.appendChild(card);
+        }
+
+        if (failCount > 0) {
+          setStatus(`Bulk page generated. Success: ${successCount}, Failed: ${failCount}`);
+        } else {
+          setStatus(`Bulk page generated. Total: ${successCount}`);
+        }
+      } catch (e) {
+        setStatus('Bulk page failed: ' + e.message);
+      }
+    }
+
+    document.getElementById('makeQrBtn').addEventListener('click', generateQr);
+    document.getElementById('makeBarcodeBtn').addEventListener('click', generateBarcode);
+    document.getElementById('generateBulkBtn').addEventListener('click', generateBulkPage);
+    document.getElementById('generateAllBtn').addEventListener('click', () => {
+      generateQr();
+      generateBarcode();
+      generateBulkPage();
+      setStatus('All sections generated.');
+    });
+    document.getElementById('focusQrBtn').addEventListener('click', () => scrollToSection('qrSection'));
+    document.getElementById('focusBarcodeBtn').addEventListener('click', () => scrollToSection('barcodeSection'));
+    document.getElementById('focusBulkBtn').addEventListener('click', () => scrollToSection('bulkSection'));
+
+    generateQr();
+    generateBarcode();
+    generateBulkPage();
+  </script>
+</body>
+</html>
